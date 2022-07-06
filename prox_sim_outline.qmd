@@ -1,0 +1,26 @@
+---
+title: "PROX Simulation Specs"
+format: html
+---
+
+## PROX Simulation Outline
+
+This simulation will compare the recovery of simulated ability parameters using different ability estimation functions with fixed item parameter estimates. The PROX method [@cohen1972] will be compared to:
+
+-   (insert estimations here)
+
+The comparisons between these estimation methods will look at different distributions of person abilities and different sample sizes of responses. The different levels of these factors are:
+
+-   Person abilities:
+    -   A standard normal distribution, $\theta \sim \mathcal{N}(\mu = 0, \sigma^2 = 1)$
+    -   $\theta \sim \mathcal{N}(0, 2)$
+    -   $\theta \sim \mathcal{N}(-2, 1)$
+    -   $\theta \sim \mathcal{N}(2, 1)$
+    -   A bimodal mixture distribution with equal $\sigma^2 = 0.5$ and modes $\mathcal{Mo}_1 = -1$ and $\mathcal{Mo}_2 = 1$
+-   Sample sizes:
+    -   $n = 200$
+    -   $n = 1000$
+
+## Creating the data
+
+To be created.
