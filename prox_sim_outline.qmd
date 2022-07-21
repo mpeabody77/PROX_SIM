@@ -7,22 +7,192 @@ format: html
 
 This simulation will compare the recovery of simulated ability parameters using different ability estimation functions with fixed item parameter estimates. The PROX method [@cohen1972] will be compared to:
 
--   JMLE
--   CMLE
--   MMLE
+-   Joint Maximum Likelihood Estimation (JMLE; TAM package) *Can use fixed item parameters*
+-   Marginal Maximum Likelihood Estimation (MMLE; TAM or ltm package) *TAM uses EAP after MMLE*
+-   Conditional Maximum Likelihood Estimation (CMLE; eRm package) *Can't use fixed item parameters, takes magnitudes longer than the other methods (\~2 minutes in condition 1)*
+-   Expected a Posteriori estimator (EAP; irtoys package) *Uses LTM as the backend, can use fixed item parameters*
 
 The comparisons between these estimation methods will look at different distributions of person abilities and different sample sizes of responses. The different levels of these factors are:
 
--   Person abilities:
-    -   A standard normal distribution, $\theta \sim \mathcal{N}(\mu = 0, \sigma^2 = 1)$
-    -   $\theta \sim \mathcal{N}(0, 2)$
-    -   $\theta \sim \mathcal{N}(-2, 1)$
-    -   $\theta \sim \mathcal{N}(2, 1)$
-    -   A bimodal mixture distribution with equal $\sigma^2 = 0.5$ and modes $\mathcal{Mo}_1 = -1$ and $\mathcal{Mo}_2 = 1$
--   Sample sizes:
+-   Parameter Distributions:
+    -   Both items and persons: A standard normal distribution, $\theta \sim \mathcal{N}(\mu = 0, \sigma^2 = 1)$
+
+    -   Both items and persons: $\theta \sim \mathcal{N}(0, 2)$
+
+    -   Items = $\theta \sim \mathcal{N}(-1, 1)$ and Persons = $\theta \sim \mathcal{N}(1, 1)$
+
+    -   Items = $\theta \sim \mathcal{N}(-2, 1)$ and Persons = $\theta \sim \mathcal{N}(2, 1)$
+
+    -   Items = $\theta \sim \mathcal{N}(-3, 1)$ and Persons = $\theta \sim \mathcal{N}(3, 1)$
+
+    -   Items = $\theta \sim \mathcal{N}(0, 1)$ and Persons = bimodal mixture distribution with equal $\sigma^2 = 0.5$ and modes $\mathcal{Mo}_1 = -1$ and $\mathcal{Mo}_2 = 1$
+-   Person Sample sizes:
+    -   $n = 25$
+    -   $n = 50$
+    -   $n = 100$
     -   $n = 200$
+    -   $n = 500$
     -   $n = 1000$
+
+Here is a table of each condition label and its parameter values.
+
+```{r}
+
+person_sample_sizes = c(25, 50, 100, 200, 500, 1000)
+parameter_distribution_condition = c("Standard Normal", "Wide Normal", "-1 Item Diff, +1 Person Theta", "-2 Item Diff, +2 Person Theta", "-3 Item Diff, +3 Person Theta", "Normal Items, Bimodal Persons")
+
+conditions = expand.grid(person_sample_sizes, parameter_distribution_condition)
+conditions = cbind(paste0("Condition ", 1:nrow(conditions)), conditions)
+conditions = conditions[, c(1, 3, 2)]
+knitr::kable(conditions, col.names = c("Condition", "Item/Person Parameters", "Number of Persons"))
+
+```
 
 ## Creating the data
 
-To be created.
+The following code chunk provides some setup for the simulation. It loads the required packages and defines functions to simulate the response data for analysis.
+
+```{r setup}
+require(TAM)
+require(eRm)
+require(irtoys)
+
+iter = 100
+person_sample_sizes = c(25, 50, 100, 200, 500, 1000)
+
+rasch_response_sim = function(person_theta_value, item_diff_value) {
+  resp_prob = exp(person_theta_value - item_diff_value) / (1 + exp(person_theta_value - item_diff_value))
+  response = ifelse(
+    test = runif(n = length(resp_prob)) <= resp_prob,
+    yes = 1,
+    no = 0)
+  return(response)
+}
+prox_estimate = function(mean_item_diff, sd_item_diff, observed_raw_score, maximum_score) {
+  mean_item_diff + 
+    sqrt(1 + sd_item_diff/2.9) * 
+    log(observed_raw_score/(maximum_score - observed_raw_score))
+}
+```
+
+Then, for each condition, we create the simulated item and person parameters and use the different estimation methods to estimate the person parameters based on the simulated data.
+
+For PROX, a custom function using the formula [given on the Winsteps website](https://www.winsteps.com/winman/iterations.htm) was implemented.
+
+For JMLE, the `tam.jml` function accepts the matrix of responses and, optionally, a matrix of item numbers (first column) and item difficulties (second column) to use as fixed values. This puts the focus on the *person parameter estimates* which is what we want for our simulation. The `$theta` element of the resulting list holds the estimated person parameters. Since the function does not automatically remove items with no correct responses, the simulation automatically removes these items (if they exist in the given iteration) and estimates person parameters based on the remaining items.
+
+For MMLE, the `tam.mml` function behaves similarly. The output is different, however; we need to access `$person$EAP` to get the person theta estimates using the expected a posteriori of the marginal maximum likelihood estimator. Since some items may normally be removed due to the number of correct responses, we also specify `item.elim = FALSE` to keep these items in the analysis.
+
+```{r condition-1}
+# Condition 1 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+estimates_file_name = 'simdata/condition-1-estimates.RDS'
+responses_file_name = 'simdata/condition-1-responses.RDS'
+
+condition_1_estimates = vector(mode = 'list', length = iter)
+condition_1_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_1_estimates[[i]] = thetas
+  condition_1_responses[[i]] = responses
+
+}
+
+(End.time = Sys.time() - Start.time)
+# saveRDS(condition_1_estimates, file = estimates_file_name_file_name)
+# saveRDS(condition_1_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-2}
+# Condition 2 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition-2-estimates.RDS'
+responses_file_name = 'simdata/condition-2-responses.RDS'
+
+condition_2_estimates = vector(mode = 'list', length = iter)
+condition_2_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_2_estimates[[i]] = thetas
+  condition_2_responses[[i]] = responses
+
+}
+
+(End.time = Sys.time() - Start.time)
+# saveRDS(condition_1_estimates, file = estimates_file_name_file_name)
+# saveRDS(condition_1_responses, file = responses_file_name_file_name_file_name)
+
+```
