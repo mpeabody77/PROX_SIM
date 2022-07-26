@@ -25,7 +25,7 @@ The comparisons between these estimation methods will look at different distribu
 
     -   Items = $\theta \sim \mathcal{N}(-3, 1)$ and Persons = $\theta \sim \mathcal{N}(3, 1)$
 
-    -   Items = $\theta \sim \mathcal{N}(0, 1)$ and Persons = bimodal mixture distribution with equal $\sigma^2 = 0.5$ and modes $\mathcal{Mo}_1 = -1$ and $\mathcal{Mo}_2 = 1$
+    -   Items = $\theta \sim \mathcal{N}(0, 1)$ and Persons = bimodal mixture distribution with equal $\sigma^2 = 0.5$ and modes $\mathcal{Mo}_1 = -1.5$ and $\mathcal{Mo}_2 = 1.5$
 -   Person Sample sizes:
     -   $n = 25$
     -   $n = 50$
@@ -83,6 +83,8 @@ For JMLE, the `tam.jml` function accepts the matrix of responses and, optionally
 
 For MMLE, the `tam.mml` function behaves similarly. The output is different, however; we need to access `$person$EAP` to get the person theta estimates using the expected a posteriori of the marginal maximum likelihood estimator. Since some items may normally be removed due to the number of correct responses, we also specify `item.elim = FALSE` to keep these items in the analysis.
 
+### Standard Normal
+
 ```{r condition-1}
 # Condition 1 Parameters
 Start.time = Sys.time()
@@ -90,8 +92,8 @@ n_person = person_sample_sizes[1]
 n_item = 200
 m_item = m_person = 0
 sd_item = sd_person = 1
-estimates_file_name = 'simdata/condition-1-estimates.RDS'
-responses_file_name = 'simdata/condition-1-responses.RDS'
+estimates_file_name = 'simdata/condition_1_estimates.RDS'
+responses_file_name = 'simdata/condition_1_responses.RDS'
 
 condition_1_estimates = vector(mode = 'list', length = iter)
 condition_1_responses = vector(mode = 'list', length = iter)
@@ -129,14 +131,13 @@ for (i in 1:iter) {
   
   thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
   
-  condition_1_estimates[[i]] = thetas
+  condition_1_estimates[[i]] = list(thetas, item_diff)
   condition_1_responses[[i]] = responses
 
 }
 
-(End.time = Sys.time() - Start.time)
-# saveRDS(condition_1_estimates, file = estimates_file_name_file_name)
-# saveRDS(condition_1_responses, file = responses_file_name_file_name_file_name)
+saveRDS(condition_1_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_1_responses, file = responses_file_name_file_name_file_name)
 
 ```
 
@@ -147,8 +148,8 @@ n_item = 200
 m_item = m_person = 0
 sd_item = sd_person = 1
 
-estimates_file_name = 'simdata/condition-2-estimates.RDS'
-responses_file_name = 'simdata/condition-2-responses.RDS'
+estimates_file_name = 'simdata/condition_2_estimates.RDS'
+responses_file_name = 'simdata/condition_2_responses.RDS'
 
 condition_2_estimates = vector(mode = 'list', length = iter)
 condition_2_responses = vector(mode = 'list', length = iter)
@@ -184,15 +185,1931 @@ for (i in 1:iter) {
       method = 'EAP'
     )[,1]
   
-  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
   
-  condition_2_estimates[[i]] = thetas
+  condition_2_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
   condition_2_responses[[i]] = responses
 
 }
 
-(End.time = Sys.time() - Start.time)
-# saveRDS(condition_1_estimates, file = estimates_file_name_file_name)
-# saveRDS(condition_1_responses, file = responses_file_name_file_name_file_name)
+saveRDS(condition_2_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_2_responses, file = responses_file_name_file_name_file_name)
 
 ```
+
+```{r condition-3}
+# Condition 3 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_3_estimates.RDS'
+responses_file_name = 'simdata/condition_3_responses.RDS'
+
+condition_3_estimates = vector(mode = 'list', length = iter)
+condition_3_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_3_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_3_responses[[i]] = responses
+
+}
+
+saveRDS(condition_3_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_3_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-4}
+# Condition 4 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_4_estimates.RDS'
+responses_file_name = 'simdata/condition_4_responses.RDS'
+
+condition_4_estimates = vector(mode = 'list', length = iter)
+condition_4_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_4_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_4_responses[[i]] = responses
+
+}
+
+saveRDS(condition_4_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_4_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-5}
+# Condition 5 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_5_estimates.RDS'
+responses_file_name = 'simdata/condition_5_responses.RDS'
+
+condition_5_estimates = vector(mode = 'list', length = iter)
+condition_5_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_5_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_5_responses[[i]] = responses
+
+}
+
+saveRDS(condition_5_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_5_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-6}
+# Condition 6 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_6_estimates.RDS'
+responses_file_name = 'simdata/condition_6_responses.RDS'
+
+condition_6_estimates = vector(mode = 'list', length = iter)
+condition_6_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_6_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_6_responses[[i]] = responses
+
+}
+
+saveRDS(condition_6_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_6_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+### Wide Normal
+
+```{r condition-7}
+# Condition 7 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+estimates_file_name = 'simdata/condition_7_estimates.RDS'
+responses_file_name = 'simdata/condition_7_responses.RDS'
+
+condition_7_estimates = vector(mode = 'list', length = iter)
+condition_7_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_7_estimates[[i]] = list(thetas, item_diff)
+  condition_7_responses[[i]] = responses
+
+}
+
+saveRDS(condition_7_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_7_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-8}
+# Condition 8 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+
+estimates_file_name = 'simdata/condition_8_estimates.RDS'
+responses_file_name = 'simdata/condition_8_responses.RDS'
+
+condition_8_estimates = vector(mode = 'list', length = iter)
+condition_8_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_8_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_8_responses[[i]] = responses
+
+}
+
+saveRDS(condition_8_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_8_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-9}
+# Condition 9 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+
+estimates_file_name = 'simdata/condition_9_estimates.RDS'
+responses_file_name = 'simdata/condition_9_responses.RDS'
+
+condition_9_estimates = vector(mode = 'list', length = iter)
+condition_9_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_9_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_9_responses[[i]] = responses
+
+}
+
+saveRDS(condition_9_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_9_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-10}
+# Condition 10 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+
+estimates_file_name = 'simdata/condition_10_estimates.RDS'
+responses_file_name = 'simdata/condition_10_responses.RDS'
+
+condition_10_estimates = vector(mode = 'list', length = iter)
+condition_10_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_10_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_10_responses[[i]] = responses
+
+}
+
+saveRDS(condition_10_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_10_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-11}
+# Condition 11 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+
+estimates_file_name = 'simdata/condition_11_estimates.RDS'
+responses_file_name = 'simdata/condition_11_responses.RDS'
+
+condition_11_estimates = vector(mode = 'list', length = iter)
+condition_11_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_11_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_11_responses[[i]] = responses
+
+}
+
+saveRDS(condition_11_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_11_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-12}
+# Condition 12 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = m_person = 0
+sd_item = sd_person = 2
+
+estimates_file_name = 'simdata/condition_12_estimates.RDS'
+responses_file_name = 'simdata/condition_12_responses.RDS'
+
+condition_12_estimates = vector(mode = 'list', length = iter)
+condition_12_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_12_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_12_responses[[i]] = responses
+
+}
+
+saveRDS(condition_12_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_12_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+### -1 Item +1 Theta
+
+```{r condition-13}
+# Condition 13 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+estimates_file_name = 'simdata/condition_13_estimates.RDS'
+responses_file_name = 'simdata/condition_13_responses.RDS'
+
+condition_13_estimates = vector(mode = 'list', length = iter)
+condition_13_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_13_estimates[[i]] = list(thetas, item_diff)
+  condition_13_responses[[i]] = responses
+
+}
+
+saveRDS(condition_13_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_13_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-14}
+# Condition 14 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_14_estimates.RDS'
+responses_file_name = 'simdata/condition_14_responses.RDS'
+
+condition_14_estimates = vector(mode = 'list', length = iter)
+condition_14_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_14_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_14_responses[[i]] = responses
+
+}
+
+saveRDS(condition_14_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_14_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-15}
+# Condition 15 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_15_estimates.RDS'
+responses_file_name = 'simdata/condition_15_responses.RDS'
+
+condition_15_estimates = vector(mode = 'list', length = iter)
+condition_15_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_15_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_15_responses[[i]] = responses
+
+}
+
+saveRDS(condition_15_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_15_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-16}
+# Condition 16 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_16_estimates.RDS'
+responses_file_name = 'simdata/condition_16_responses.RDS'
+
+condition_16_estimates = vector(mode = 'list', length = iter)
+condition_16_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_16_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_16_responses[[i]] = responses
+
+}
+
+saveRDS(condition_16_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_16_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-17}
+# Condition 17 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_17_estimates.RDS'
+responses_file_name = 'simdata/condition_17_responses.RDS'
+
+condition_17_estimates = vector(mode = 'list', length = iter)
+condition_17_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_17_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_17_responses[[i]] = responses
+
+}
+
+saveRDS(condition_17_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_17_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-18}
+# Condition 18 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = -1; m_person = 1
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_18_estimates.RDS'
+responses_file_name = 'simdata/condition_18_responses.RDS'
+
+condition_18_estimates = vector(mode = 'list', length = iter)
+condition_18_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_18_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_18_responses[[i]] = responses
+
+}
+
+saveRDS(condition_18_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_18_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+### -2 Item +2 Theta
+
+```{r condition-19}
+# Condition 19 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+estimates_file_name = 'simdata/condition_19_estimates.RDS'
+responses_file_name = 'simdata/condition_19_responses.RDS'
+
+condition_19_estimates = vector(mode = 'list', length = iter)
+condition_19_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_19_estimates[[i]] = list(thetas, item_diff)
+  condition_19_responses[[i]] = responses
+
+}
+
+saveRDS(condition_19_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_19_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-20}
+# Condition 20 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_20_estimates.RDS'
+responses_file_name = 'simdata/condition_20_responses.RDS'
+
+condition_20_estimates = vector(mode = 'list', length = iter)
+condition_20_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_20_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_20_responses[[i]] = responses
+
+}
+
+saveRDS(condition_20_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_20_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-21}
+# Condition 21 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_21_estimates.RDS'
+responses_file_name = 'simdata/condition_21_responses.RDS'
+
+condition_21_estimates = vector(mode = 'list', length = iter)
+condition_21_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_21_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_21_responses[[i]] = responses
+
+}
+
+saveRDS(condition_21_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_21_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-22}
+# Condition 22 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_22_estimates.RDS'
+responses_file_name = 'simdata/condition_22_responses.RDS'
+
+condition_22_estimates = vector(mode = 'list', length = iter)
+condition_22_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_22_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_22_responses[[i]] = responses
+
+}
+
+saveRDS(condition_22_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_22_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-23}
+# Condition 23 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_23_estimates.RDS'
+responses_file_name = 'simdata/condition_23_responses.RDS'
+
+condition_23_estimates = vector(mode = 'list', length = iter)
+condition_23_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_23_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_23_responses[[i]] = responses
+
+}
+
+saveRDS(condition_23_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_23_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-24}
+# Condition 24 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = -2; m_person = 2
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_24_estimates.RDS'
+responses_file_name = 'simdata/condition_24_responses.RDS'
+
+condition_24_estimates = vector(mode = 'list', length = iter)
+condition_24_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_24_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_24_responses[[i]] = responses
+
+}
+
+saveRDS(condition_24_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_24_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+### -3 Item +3 Theta
+
+```{r condition-25}
+# Condition 25 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+estimates_file_name = 'simdata/condition_25_estimates.RDS'
+responses_file_name = 'simdata/condition_25_responses.RDS'
+
+condition_25_estimates = vector(mode = 'list', length = iter)
+condition_25_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_25_estimates[[i]] = list(thetas, item_diff)
+  condition_25_responses[[i]] = responses
+
+}
+
+saveRDS(condition_25_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_25_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-26}
+# Condition 26 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_26_estimates.RDS'
+responses_file_name = 'simdata/condition_26_responses.RDS'
+
+condition_26_estimates = vector(mode = 'list', length = iter)
+condition_26_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_26_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_26_responses[[i]] = responses
+
+}
+
+saveRDS(condition_26_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_26_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-27}
+# Condition 27 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_27_estimates.RDS'
+responses_file_name = 'simdata/condition_27_responses.RDS'
+
+condition_27_estimates = vector(mode = 'list', length = iter)
+condition_27_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_27_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_27_responses[[i]] = responses
+
+}
+
+saveRDS(condition_27_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_27_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-28}
+# Condition 28 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_28_estimates.RDS'
+responses_file_name = 'simdata/condition_28_responses.RDS'
+
+condition_28_estimates = vector(mode = 'list', length = iter)
+condition_28_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_28_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_28_responses[[i]] = responses
+
+}
+
+saveRDS(condition_28_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_28_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-29}
+# Condition 29 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_29_estimates.RDS'
+responses_file_name = 'simdata/condition_29_responses.RDS'
+
+condition_29_estimates = vector(mode = 'list', length = iter)
+condition_29_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_29_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_29_responses[[i]] = responses
+
+}
+
+saveRDS(condition_29_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_29_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-30}
+# Condition 30 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = -3; m_person = 3
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_30_estimates.RDS'
+responses_file_name = 'simdata/condition_30_responses.RDS'
+
+condition_30_estimates = vector(mode = 'list', length = iter)
+condition_30_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_30_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_30_responses[[i]] = responses
+
+}
+
+saveRDS(condition_30_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_30_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+### Normal Item, Bimodal Theta
+
+```{r condition-31}
+# Condition 31 Parameters
+Start.time = Sys.time()
+n_person = person_sample_sizes[1]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+estimates_file_name = 'simdata/condition_31_estimates.RDS'
+responses_file_name = 'simdata/condition_31_responses.RDS'
+
+condition_31_estimates = vector(mode = 'list', length = iter)
+condition_31_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(item_diff, person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_31_estimates[[i]] = list(thetas, item_diff)
+  condition_31_responses[[i]] = responses
+
+}
+
+saveRDS(condition_31_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_31_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-32}
+# Condition 32 Parameters
+n_person = person_sample_sizes[2]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_32_estimates.RDS'
+responses_file_name = 'simdata/condition_32_responses.RDS'
+
+condition_32_estimates = vector(mode = 'list', length = iter)
+condition_32_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_32_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_32_responses[[i]] = responses
+
+}
+
+saveRDS(condition_32_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_32_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-33}
+# Condition 33 Parameters
+n_person = person_sample_sizes[3]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_33_estimates.RDS'
+responses_file_name = 'simdata/condition_33_responses.RDS'
+
+condition_33_estimates = vector(mode = 'list', length = iter)
+condition_33_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_33_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_33_responses[[i]] = responses
+
+}
+
+saveRDS(condition_33_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_33_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-34}
+# Condition 34 Parameters
+n_person = person_sample_sizes[4]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_34_estimates.RDS'
+responses_file_name = 'simdata/condition_34_responses.RDS'
+
+condition_34_estimates = vector(mode = 'list', length = iter)
+condition_34_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_34_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_34_responses[[i]] = responses
+
+}
+
+saveRDS(condition_34_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_34_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-35}
+# Condition 35 Parameters
+n_person = person_sample_sizes[5]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_35_estimates.RDS'
+responses_file_name = 'simdata/condition_35_responses.RDS'
+
+condition_35_estimates = vector(mode = 'list', length = iter)
+condition_35_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_35_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_35_responses[[i]] = responses
+
+}
+
+saveRDS(condition_35_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_35_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+```{r condition-36}
+# Condition 36 Parameters
+n_person = person_sample_sizes[6]
+n_item = 200
+m_item = 0; m_person = c(-1.5, 1.5)
+sd_item = sd_person = 1
+
+estimates_file_name = 'simdata/condition_36_estimates.RDS'
+responses_file_name = 'simdata/condition_36_responses.RDS'
+
+condition_36_estimates = vector(mode = 'list', length = iter)
+condition_36_responses = vector(mode = 'list', length = iter)
+
+for (i in 1:iter) {
+  item_diff = round(rnorm(n = n_item, mean = m_item, sd = sd_item), 3)
+  person_theta = rnorm(n = n_person, mean = m_person, sd = sd_person)
+  
+  responses = matrix(nrow = n_person, ncol = n_item)
+  
+  for (p in 1:n_person) {
+    responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
+  }
+  
+  zero_correct_items = which(colSums(responses) == 0)
+  if (length(zero_correct_items) > 0) {
+    modified_responses = responses[,-zero_correct_items]
+    modified_item_diff = item_diff[-zero_correct_items]
+  } else {
+    modified_responses = responses
+    modified_item_diff = item_diff
+
+  }
+  
+  prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
+  jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
+  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  eap_theta_est  = 
+    irtoys::ability(
+      resp = responses,
+      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      method = 'EAP'
+    )[,1]
+  
+  thetas = cbind(person_theta, prox_theta_est, jmle_theta_est, cmle_theta_est, eap_theta_est)
+  
+  condition_36_estimates[[i]] = list("thetas" = thetas, "item_diff" = item_diff)
+  condition_36_responses[[i]] = responses
+
+}
+
+saveRDS(condition_36_estimates, file = estimates_file_name_file_name)
+saveRDS(condition_36_responses, file = responses_file_name_file_name_file_name)
+
+```
+
+
+## Analyzing the data
