@@ -2111,5 +2111,4 @@ saveRDS(condition_36_responses, file = responses_file_name_file_name_file_name)
 
 ```
 
-
 ## Analyzing the data
