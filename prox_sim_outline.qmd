@@ -108,7 +108,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -120,12 +120,12 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
-      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      resp = modified_responses,
+      ip = list('est' = cbind(1, modified_item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
   
@@ -164,7 +164,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -176,12 +176,12 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
-      ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
+      resp = modified_responses,
+    ip = list('est' = cbind(1, modified_item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
   
@@ -220,7 +220,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -232,11 +232,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -276,7 +276,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -288,11 +288,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -332,7 +332,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -344,11 +344,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -388,7 +388,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -400,11 +400,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -446,7 +446,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -458,11 +458,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -502,7 +502,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -514,11 +514,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -558,7 +558,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -570,11 +570,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -614,7 +614,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -626,11 +626,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -670,7 +670,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -682,11 +682,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -726,7 +726,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -738,11 +738,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -784,7 +784,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -796,11 +796,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -840,7 +840,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -852,11 +852,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -896,7 +896,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -908,11 +908,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -952,7 +952,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -964,11 +964,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1008,7 +1008,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1020,11 +1020,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1064,7 +1064,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1076,11 +1076,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1122,7 +1122,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1134,11 +1134,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1178,7 +1178,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1190,11 +1190,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1234,7 +1234,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1246,11 +1246,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1290,7 +1290,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1302,11 +1302,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1346,7 +1346,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1358,11 +1358,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1402,7 +1402,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1414,11 +1414,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1460,7 +1460,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1472,11 +1472,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1516,7 +1516,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1528,11 +1528,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1572,7 +1572,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1584,11 +1584,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1628,7 +1628,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1640,11 +1640,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1684,7 +1684,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1696,11 +1696,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1740,7 +1740,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1752,11 +1752,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1798,7 +1798,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1810,11 +1810,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1854,7 +1854,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1866,11 +1866,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1910,7 +1910,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1922,11 +1922,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -1966,7 +1966,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -1978,11 +1978,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -2022,7 +2022,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -2034,11 +2034,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
@@ -2078,7 +2078,7 @@ for (i in 1:iter) {
     responses[p, ] = rasch_response_sim(person_theta[p], item_diff)
   }
   
-  zero_correct_items = which(colSums(responses) == 0)
+  zero_correct_items = which(colSums(responses) == 0 | colSums(responses) == n_person)
   if (length(zero_correct_items) > 0) {
     modified_responses = responses[,-zero_correct_items]
     modified_item_diff = item_diff[-zero_correct_items]
@@ -2090,11 +2090,11 @@ for (i in 1:iter) {
   
   prox_theta_est = prox_estimate(mean(item_diff), sd(item_diff), rowSums(responses), n_item)
   jmle_theta_est = TAM::tam.jml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff))$theta
-  mmle_theta_est = TAM::tam.mml(responses, xsi.fixed = cbind(1:length(item_diff), item_diff), item.elim = FALSE)$person$EAP
-  cmle_theta_est = eRm::person.parameter(eRm::RM(responses))$thetapar$NAgroup1
+  mmle_theta_est = TAM::tam.mml(modified_responses, xsi.fixed = cbind(1:length(modified_item_diff), modified_item_diff), item.elim = FALSE)$person$EAP
+  cmle_theta_est = eRm::person.parameter(eRm::RM(modified_responses))$thetapar$NAgroup1
   eap_theta_est  = 
     irtoys::ability(
-      resp = responses,
+      resp = modified_responses,
       ip = list('est' = cbind(1, item_diff, 0, deparse.level = 0)),
       method = 'EAP'
     )[,1]
