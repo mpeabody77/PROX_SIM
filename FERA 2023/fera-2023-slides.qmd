@@ -1,0 +1,217 @@
+---
+title: "Comparing the Robustness of PROX Estimation to Maximum Likelihood Estimation"
+author: "Anthony Raborn, Psychometrician"
+institution: "NABP"
+bibliography: references.bib
+csl: apa.csl
+format: 
+  revealjs:
+    theme: dark
+    logo: Master-Symbol-FullColor.png
+    css: logo.css
+---
+
+## What is PROX Estimation?
+*Also known as Non-iterative Normal Approximation estimation*
+
+::: {.incremental}
+- Algebraic estimate of person parameters
+- Used within a Rasch (or sometimes 1PL) framework
+- Can be used with fixed item parameters
+- Often used as an *initial* estimate of parameters for other iterative methods
+:::
+
+## PROX Equation
+
+$$\hat{\theta}_p = \bar{\beta}_i + \ln(\frac{R_p}{N_p - R_p})\sqrt{1+\frac{\sigma_i}{2.9}}$$
+[see @cohen1979approximate for the derivation; @linacre1999understanding for more discussion.]
+
+::: {.notes}
+
+$\hat{\theta}_p$: Estimated ability for person *p*
+
+$\bar{\beta}_i$: Mean of item difficulties on exam form
+
+$\sigma_i$: Standard deviation of item difficulties on exam form
+
+$R_p$: Maximum score possible on exam form 
+
+$N_p$: Observed number correct on exam form 
+
+:::
+
+## Purpose 
+
+- Iterative methods are *ubiquitous* for applying item response theory and Rasch measurement theory
+  - Even with known item parameters!
+- These methods, especially with Rasch exams, usually start with PROX
+- Given this, how accurate is PROX on its own?
+  - Important for practical applications in large-scale testing
+
+## Research Questions
+
+::: {.incremental}
+1.	How robust is (non-iterative) PROX to sample size fluctuations?
+2.	How robust is PROX to violations of the distributional assumptions for items and persons?
+3.	How do estimates produced by PROX compare to other common estimation methods under the conditions set in the first two research questions?
+:::
+
+# Simulation Study Conditions 
+## Person and Item Parameters 
+
+1. Standard Normal Parameters
+2. Wide Normal Parameters
+3. Small Parameter Mismatch
+4. Large Parameter Mismatch
+5. Extreme Parameter Mismatch
+6. Bimodal Person Parameters
+
+::: {.notes}
+
+1.	***Standard Normal Parameters***: Normally distributed item difficulties and person abilities with $μ = 0$ and $σ = 1$ 
+2.	***Wide Normal Parameters***: Normally distributed item difficulties and person abilities with $μ = 0$ and $σ = 2$
+3.	***Small Parameter Mismatch***: Normally distributed item difficulties ($μ_i = -1, σ_i = 1$) and person abilities ($μ_p = +1, σ_p = 1$) (2 logit difference)
+4.	***Large Parameter Mismatch***: Normally distributed item difficulties ($μ_i = -2, σ_i = 1$) and person abilities ($μ_p = +2, σ_p = 1$) (4 logit difference)
+5.	***Extreme Parameter Mismatch***: Normally distributed item difficulties ($μ_i = -3, σ_i = 1$) and person abilities ($μ_p = +3, σ_p = 1$) (6 logit difference)
+6.	***Bimodal Person Parameters***: Normally distributed item difficulties ($μ_i = 0, σ_i = 1$) and bimodally distributed person abilities ($μ_{p1} = -1.5, μ_{p2} = +1.5$ and $σ_{p1} = σ_{p2} = 1$)
+
+::: 
+
+## Number of Persons and Items
+
+::: {.incremental}
+1. Persons: $n_p \in (25, 50, 100, 250, 500, 1000)$
+2. Items: $n_i = 200$
+:::
+
+. . .
+
+Total of **36** data conditions with **100** repetitions for **3600** total simulation iterations. 
+
+. . .
+
+::: {.notes}
+Rationale: Persons range from just about the smallest reasonable sample to a more than sufficient sample, while items are fixed to mirror an operational certification exam, and will be investigated separately.
+:::
+
+## Estimation Methods
+
+1. PROX Estimation (PROX; manually coded in `R` [@R2023])
+2. Joint Maximum Likelihood Estimation (JMLE; `TAM` [@TAM_4.1-4])
+3. Conditional Maximum Likelihood Estimation (CMLE; `eRm` [@eRm2007])
+  - NOTE: did NOT accept fixed item parameters
+4. Expected A Posteriori estimation (EAP; `ltm` [@ltm2006] via `irtoys`)
+
+Note: extreme values ($\hat{\theta} =\pm 4$) were truncated
+
+## Analysis Methods
+
+1. Correlation: $\rho = \frac{\text{cov}(\theta, \hat{\theta})}{\sigma_{\theta}, \sigma_{\hat{\theta}}}$
+2. Mean bias: $\frac{\Sigma^n_{i=1}(\hat{\theta_i}-\theta_i)}{n}$
+3. Mean absolute difference (MAD): $\frac{\Sigma^n_{i=1}\mid\hat{\theta_i}-\theta_i\mid}{n - 1}$
+4. Root mean square error (RMSE): $\sqrt{\frac{\Sigma^n_{i=1}(\hat{\theta_i}-\theta_i)^2}{n - 1}}$
+
+[Formulas for mean bias, MAD, and RMSE taken from @SimStudies2016]
+
+# Results
+
+## Correlation
+
+- Average correlation across conditions 1, 2, 3, and 6 for each estimation method were very high (.96 or greater)
+- Average correlation for conditions 4 and 5 were high between estimation methods (.97 or greater) but much lower for true values
+  - Large Parameter Difference: approximately .88 for each method
+  - Extreme Parameter Difference: approximately .68 for each method
+- No noticeable variability across sample sizes
+
+## Mean Bias
+
+- JMLE: average of $-0.08$ across all conditions
+- PROX: average of $0.14$ across all conditions
+- EAP: average of $-0.34$ across all conditions
+- CMLE: average of $0.74$ across all conditions
+
+::: {.notes}
+JMLE:
+  - closest to 0 in all conditions except Large Parameter Mismatch, $n = 25$, and in Extreme Parameter Mismatch, $n \in (25, 50)$
+  - these generally got better as number of persons increased for Large and Extreme
+
+PROX: 
+  - nearly equal to JMLE in most conditions
+  - while better in small number of persons for Large and Extreme Parameter Mismatch, bias did not decrease as number of persons increased
+
+EAP:
+  - Similar performance as JMLE with worse values in Large and Extreme Parameter Mismatch
+
+CMLE:
+  - close to 0 for Standard, Wide, and Bimodal Normal conditions
+  - positive bias in Small, Large, and Extreme Parameter Mismatch that got worse with larger number of persons
+
+:::
+
+## MAD
+
+- Best: PROX and JMLE ($0.31$ and $0.33$ across conditions, respectively)
+- Next: EAP ($0.47$ across conditions)
+- Worst: CMLE ($0.67$ across conditions)
+- Generally little changes based on number of persons
+  - JMLE and EAP showed positive change for worst conditions, while CMLE showed negative change
+
+::: {.notes}
+Best:
+  - Large and Extreme Parameter Mismatch conditions had highest MAD in both cases
+  - PROX had somewhat higher values in the Wide Normal condition and worse values overall
+Next:
+  - Poor performance in Large Parameter Mismatch that improved to match with more persons
+  - Poor performance in Extreme Parameter Mismatch that improved but was still significantly worse with more persons
+Worst:
+  - Poor performance in Large/Extreme Mismatch that got *worse* with more persons 
+:::
+
+## RMSE
+
+- Best: PROX and JMLE ($0.21$ and $0.29$ across conditions, respectively)
+- Next: EAP ($0.64$ across conditions)
+- Worst: CMLE ($0.85$ across conditions)
+- Generally little changes based on number of persons
+  - JMLE and EAP showed positive change for worst conditions, while CMLE showed negative change
+
+::: {.notes}
+Best:
+  - Large and Extreme Parameter Mismatch conditions had highest RMSE in both cases
+  - PROX had somewhat higher values in the Wide Normal condition (worst overall)
+Next:
+  - Poor performance in Large Parameter Mismatch that improved to match with more persons
+  - Poor performance in Extreme Parameter Mismatch that improved but was still significantly worse with more persons
+Worst:
+  - Poor performance in Large/Extreme Mismatch that got *worse* with more persons 
+:::
+
+# Conclusions
+
+::: {.incremental}
+- PROX performs quite well when the centers of the person ability and item difficulty distributions are within ~2 logits
+- PROX estimates are essentially unaffected by number of persons
+- JMLE outperforms PROX most of the time and gets better with more persons
+- EAP performed somewhat worse than PROX and JMLE with more parameter mismatch
+- CMLE performed significantly worse with any parameter mismatch
+:::
+
+# Limitations
+
+- Implementation of methods may not be perfect
+  - Use other programs (e.g., Winsteps) for ML methods?
+- Static number of items
+  - Operational work implies PROX estimates begin to differ at $n_i = 100$
+- Requires known item parameters
+  - Limits estimation methods
+- Estimates truncated
+
+# Acknowledgements
+
+Thanks to Michael Peabody for the initial idea of the study!
+
+Please send any questions to <anthony.w.raborn@gmail.com>
+
+___
+
+### References {.smaller}
